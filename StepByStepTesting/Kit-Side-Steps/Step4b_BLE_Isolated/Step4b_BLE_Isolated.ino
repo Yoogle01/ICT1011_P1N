@@ -1,22 +1,11 @@
 /*******************************************************************************
  * Step 4b - BLE isolation test (no Wireling Adapter / sensors at all)
  *
- * Step 4 hung at "BLE: SPI INIT" with the USB serial port becoming totally
- * unreachable - looked like a real hard hang (runaway interrupt), not just
- * a logical stall. The BLE TinyShield's interrupt line defaults to pin 2,
- * and the Wireling Adapter sits physically between the TinyScreen+ and the
- * BLE shield in the full stack - if it also touches pin 2, that could be
- * causing an interrupt conflict.
- *
- * This test strips out the Wireling Adapter/Thermal/TOF code entirely and
- * tests BLE alone, so you can physically test with ONLY the TinyScreen+ +
- * BLE TinyShield stacked (unplug the Wireling Adapter for this one).
- *
- * If it gets past "BLE: SPI INIT" to "BLE: WAITING" and your phone can
- * connect: the Wireling Adapter was the cause. If it still hangs even with
- * nothing else stacked: it's something about this BLE TinyShield/pin 2
- * itself, not the Wireling Adapter - worth checking the shield's INT
- * resistor position (silkscreen near "INT").
+ * Step 4 hard-hung at "BLE: SPI INIT" (the BLE TinyShield's interrupt
+ * line defaults to pin 2, which the Wireling Adapter may conflict with).
+ * This test strips out everything except BLE - run it with ONLY the
+ * TinyScreen+ and BLE TinyShield stacked.
+ * See ../../README.md for the expected results and what each outcome means.
  ******************************************************************************/
 
 #include <SPI.h>

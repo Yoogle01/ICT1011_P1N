@@ -1,26 +1,10 @@
 /*******************************************************************************
  * Step 3 - TOF Distance Sensor Test
  *
- * Adds the TOF Distance Sensor Wireling (VL53L0X) on top of Step 2, keeping
- * both sensors running together - this is what actually proves they can
- * share the Wireling Adapter's I2C mux without interfering. TOF goes in
- * Port 0, thermal stays in Port 1.
- *
- * Library: VL53L0X.h (Pololu's version - same as TinyCircuits' own tutorial)
- *
- * Note: starts with a 200ms delay for TOF startup time, same as
- * TinyCircuits' own example sketch.
- *
- * Expected: if TOF init fails, OLED shows "TOF ERR" and it halts. If both
- * work, OLED cycles "T:x D:xmm" every second (warm pixel count + distance).
- * Move your hand close to the TOF sensor and the distance should drop
- * while the thermal reading keeps working fine - confirms the two sensors
- * aren't stepping on each other over the shared bus.
- *
- * If "TOF ERR" shows up: check it's seated in Port 0 (not Port 1), and
- * that the VL53L0X library installed is actually Pololu's (there are a
- * few similarly-named ones, and setMeasurementTimingBudget()/
- * startContinuous() are specific to Pololu's API).
+ * Adds the TOF Wireling (VL53L0X, Port 0) on top of Step 2, keeping both
+ * sensors running to prove they share the I2C mux without interfering.
+ * Library: VL53L0X (Pololu's version).
+ * See ../../README.md for the expected results and troubleshooting.
  ******************************************************************************/
 
 #include <SPI.h>
@@ -61,7 +45,7 @@ void setup() {
 
   Wireling.begin();
   Wireling.selectPort(THERMAL_WIRELING_PORT);
-  delay(100); // let the thermal sensor boot up after the mux switches ports
+  delay(100); // Let the thermal sensor boot up after the mux switches ports.
 
   if (!thermalCam.begin()) {
     showStatus("THERMAL ERR");
@@ -72,7 +56,7 @@ void setup() {
   SerialUSB.println("Step 3: THERMAL OK");
   delay(500);
 
-  // shared I2C bus - re-select the TOF sensor's own port before using it
+  // Shared I2C bus - select the TOF sensor's port before using it.
   Wireling.selectPort(TOF_WIRELING_PORT);
   if (!distanceSensor.init()) {
     showStatus("TOF ERR");
@@ -106,8 +90,7 @@ void loop() {
     }
   }
 
-  // TOF read (Port 0) - re-select since the thermal read above left the
-  // mux on Port 1
+  // TOF read (Port 0) - re-select since the thermal read used Port 1.
   Wireling.selectPort(TOF_WIRELING_PORT);
   uint16_t distanceMm = distanceSensor.readRangeContinuousMillimeters();
   bool tofTimedOut = distanceSensor.timeoutOccurred();

@@ -1,28 +1,11 @@
 /*******************************************************************************
- * Step 5b - Combined, BLE-first init order (variant of
- * Step5_Combined_1_2_3_4b)
+ * Step 5b - Combined test, BLE-first init order
  *
- * Step5_Combined_1_2_3_4b inits in order OLED -> Thermal -> TOF -> BLE
- * (BLE last, after the Wireling Adapter's bus is already touched), and
- * that file's header predicts this is likely to hang from a pin conflict
- * between BLE's interrupt line and the Wireling Adapter on pin 2.
- *
- * This variant moves BLE init to right after the OLED, strictly before
- * Wire.begin()/Wireling.begin() touch anything - testing whether the hang
- * depends on init order, or is a fixed pin conflict regardless of order
- * (in which case this should still hang, just at a different point).
- *
- * Hardware: same as Step5_Combined_1_2_3_4b.
- *
- * No logic changed from that file - same OLED/Thermal/TOF/BLE code, just
- * reordered in setup(), with the print prefix changed to "Step 5b:" so the
- * two files' serial output can be told apart.
- *
- * If BLE-first avoids the hang: OLED should progress all the way through
- * to THERMAL OK/TOF OK/combined status, serial stays connected throughout.
- * If it still hangs (likely right around Wire.begin()/Wireling.begin()):
- * that points at the hardware fix on the BLE TinyShield (moving its
- * interrupt off pin 2) as the real next step.
+ * Same OLED/Thermal/TOF/BLE code as the combined Step 5, but BLE is
+ * initialized right after the OLED, strictly before Wire/Wireling touch
+ * the bus - testing whether the Step-5 hang depends on init order.
+ * Print prefix is "Step 5b:" so the two sketches' output can be told apart.
+ * See ../../README.md for the expected results.
  ******************************************************************************/
 
 #include <SPI.h>
@@ -60,8 +43,7 @@ void showStatus(const char* status) {
 }
 
 // ---------------------------------------------------------------------------
-// BLE setup/callbacks - same as Step 4b/Step5_Combined, just called at a
-// different point in setup() in this variant.
+// BLE setup/callbacks - same as Step 4b, just called earlier in setup().
 // ---------------------------------------------------------------------------
 void initBlePairing() {
   SerialUSB.println("Step 5b: HCI_Init()...");
@@ -188,9 +170,7 @@ void HCI_Event_CB(void *pckt) {
 void setup() {
   SerialUSB.begin(115200);
 
-  // --- Step 1: OLED (kept first - needed so the BLE status messages below
-  // can actually be shown on screen; OLED init doesn't touch Wire/Wireling
-  // so it's unaffected by this reordering experiment either way) ---
+  // --- Step 1: OLED (kept first so BLE status messages can be shown) ---
   display.begin();
   display.setBrightness(10);
   display.setFont(thinPixel7_10ptFontInfo);
@@ -199,11 +179,8 @@ void setup() {
   SerialUSB.println("Step 5b: OLED OK");
   delay(500);
 
-  // --- Step 4b: BLE (standard library, interrupt-based) - MOVED BEFORE
-  // Wire.begin()/Wireling.begin()/Thermal/TOF (Step5_Combined_1_2_3_4b.ino
-  // does this last, after the Wireling Adapter is already brought up). This
-  // is the actual experiment: does initializing BLE's interrupt before the
-  // Wireling Adapter touches the shared bus avoid the predicted hang? ---
+  // --- Step 4b: BLE - initialized BEFORE Wire/Wireling/Thermal/TOF (the
+  // actual experiment in this variant) ---
   SerialUSB.println("Step 5b: starting initBlePairing() (BEFORE Wireling/sensors)...");
   initBlePairing();
   showStatus("BLE: WAITING");
@@ -214,7 +191,7 @@ void setup() {
   Wire.begin();
   Wireling.begin();
   Wireling.selectPort(THERMAL_WIRELING_PORT);
-  delay(100); // settling delay - see Step 2's header comment
+  delay(100); // Settling delay after the mux switches ports.
 
   if (!thermalCam.begin()) {
     showStatus("THERMAL ERR");

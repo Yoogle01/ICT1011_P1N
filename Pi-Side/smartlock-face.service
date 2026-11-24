@@ -1,0 +1,30 @@
+[Unit]
+# Smart Lock-Screen face-presence daemon - starts after the network and
+# after /dev/video0 (webcam) is likely present. Runs headless (no X/desktop
+# needed - Raspberry Pi OS Lite).
+#
+# Install:
+#   sudo cp smartlock-face.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now smartlock-face.service
+#
+# Check status / logs:
+#   sudo systemctl status smartlock-face.service
+#   journalctl -u smartlock-face.service -f
+#
+# NOTE: adjust User=, WorkingDirectory=, and ExecStart= below if this
+# folder isn't copied to /home/pi/Pi-Side, or if using a venv at a
+# different path.
+Description=Smart Lock-Screen Raspberry Pi face-presence daemon
+After=multi-user.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/Pi-Side
+ExecStart=/home/pi/Pi-Side/venv/bin/python3 /home/pi/Pi-Side/face_presence_daemon.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
