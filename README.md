@@ -86,10 +86,12 @@ Jetson → kit:
 .
 ├── README.md
 ├── TEST_PLAN.md                                    (full test plan + timing reference)
+├── Figures/                                         (lock-logic + scenario flowcharts)
 ├── Kit-Side/
 │   └── SmartLockScreen/
 │       └── SmartLockScreen.ino                     (TinyCircuit implementation)
 ├── Pi-Side/                                         (Jetson daemon + setup, see its README)
+│   └── smartlock-hid-gadget/                        (USB HID gadget setup scripts)
 └── StepByStepTesting/                              (staged bring-up/test sketches)
 ```
 
@@ -155,6 +157,21 @@ The kit prints `MCU:WARN` 2s before the lock. After locking, the kit
 can't see whether the laptop was really unlocked (nothing runs there), so
 it rearms itself: once the owner's face is recognized continuously for
 2s, it returns to UNLOCKED and the lock logic runs again.
+
+### Flowcharts
+
+The full decision logic as one diagram:
+
+![Lock logic flowchart](Figures/lock_logic_flowchart.png)
+
+Per-scenario walkthroughs:
+
+| Scenario | Figure |
+|---|---|
+| Walked away, phone gone | [flowchart_1_walk_away.png](Figures/flowchart_1_walk_away.png) |
+| Someone in view, phone gone | [flowchart_2_heat_no_phone.png](Figures/flowchart_2_heat_no_phone.png) |
+| Stranger in front of the camera | [flowchart_3_stranger.png](Figures/flowchart_3_stranger.png) |
+| Walked away, phone still connected | [flowchart_4_no_heat_phone.png](Figures/flowchart_4_no_heat_phone.png) |
 
 ### Owner re-registration (3 onboard buttons)
 

@@ -1,0 +1,16 @@
+[Unit]
+# Smart Lock-Screen - USB HID keyboard gadget (Jetson micro-USB -> laptop).
+# Must be active before smartlock-face.service, which waits for /dev/hidg0.
+# See ../README.md's "HID gadget setup" for the install steps.
+Description=Smart Lock-Screen USB HID keyboard gadget (micro-USB -> laptop)
+After=local-fs.target
+Before=smartlock-face.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/opt/smartlock-hid-gadget/start.sh
+ExecStop=/opt/smartlock-hid-gadget/stop.sh
+
+[Install]
+WantedBy=multi-user.target

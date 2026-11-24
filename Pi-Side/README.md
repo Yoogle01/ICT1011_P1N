@@ -11,9 +11,10 @@ micro-USB OTG port used for the laptop link below).
 It also watches that serial link for the kit's `MCU:` lines and reacts by
 injecting USB HID keystrokes into the laptop through a keyboard gadget on
 the Jetson's micro-USB OTG port — see the main `../README.md` for the
-full protocol and the blind-keystroke trade-offs. See `../Jetson-Setup/`
-(in the `Team Project` folder) for the one-time Linux gadget setup and
-the full step-by-step guide (`Jetson_Nano_Setup_Guide.docx`).
+full protocol and the blind-keystroke trade-offs. The one-time gadget
+setup scripts are in `smartlock-hid-gadget/` (this folder); the full
+step-by-step Jetson guide (`Jetson_Nano_Setup_Guide.docx`) is in
+`../Jetson-Setup/` in the `Team Project` folder.
 
 The laptop itself runs **zero project code** — see "Laptop setup" below.
 
@@ -53,15 +54,40 @@ Pi-Side/
 ├── smartlock-face.service                 (systemd unit, see below)
 ├── haarcascade_frontalface_default.xml    (OpenCV face detector, bundled)
 ├── privacy_wallpaper_black.jpg            (see "Laptop setup" below)
+├── smartlock-hid-gadget/                  (USB HID gadget setup, see below)
+│   ├── start.sh / stop.sh                 (create/tear down /dev/hidg0)
+│   └── smartlock-hid-gadget.service       (runs start.sh on every boot)
 └── reference_photos/
     └── owner_photo/front.jpeg          (the one trained reference photo)
 ```
 
+## HID gadget setup (one-time, root)
+
+The gadget makes the Jetson appear to the laptop as a plain USB keyboard
+(`/dev/hidg0` on the Jetson; no drivers needed on the laptop). One-time,
+on the Jetson:
+
+```bash
+# NVIDIA's default gadget uses the same port - disable it first
+sudo systemctl stop nv-l4t-usb-device-mode.service
+sudo systemctl disable nv-l4t-usb-device-mode.service
+
+# install the gadget scripts + boot service
+sudo mkdir -p /opt/smartlock-hid-gadget
+sudo cp smartlock-hid-gadget/start.sh smartlock-hid-gadget/stop.sh /opt/smartlock-hid-gadget/
+sudo chmod +x /opt/smartlock-hid-gadget/start.sh /opt/smartlock-hid-gadget/stop.sh
+sudo cp smartlock-hid-gadget/smartlock-hid-gadget.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now smartlock-hid-gadget.service
+
+ls /dev/hidg0   # should now exist
+```
+
 ## Setup on the Jetson
 
-1. Flash Ubuntu/L4T, set up the J48 power jumper, and set up the USB HID
-   keyboard gadget first - see `../Jetson-Setup/Jetson_Nano_Setup_Guide.docx`
-   for all of that (this README only covers the Python daemon itself).
+1. Flash Ubuntu/L4T and set up the J48 power jumper (see
+   `../Jetson-Setup/Jetson_Nano_Setup_Guide.docx`), then do the HID
+   gadget setup above.
 2. Copy this whole `Pi-Side/` folder onto the Jetson, e.g.:
    ```bash
    scp -r Pi-Side <your-username>@<jetson-ip>:/home/<your-username>/Pi-Side
@@ -130,8 +156,8 @@ journalctl -u smartlock-face.service -f   # live logs
 (Edit the `User=`/paths inside `smartlock-face.service` first to match
 your actual Linux username and folder location, if different from the
 placeholders.) This service depends on `smartlock-hid-gadget.service`
-(see `../Jetson-Setup/`) being active first - the daemon won't make
-progress past its startup retry loop until that gadget exists.
+(see "HID gadget setup" above) being active first - the daemon won't
+make progress past its startup retry loop until that gadget exists.
 
 ## Configuration
 
